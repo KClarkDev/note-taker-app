@@ -7,20 +7,10 @@ const app = express();
 const PORT = process.env.PORT || 3001;
 
 app.use(express.static("public")); // Sets up middleware to serve static files from /public
-// STUDY NOTE: this means that any files placed in the "public" directory can be accessed by the client directly through the URL, without requiring any additional routing.
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static("public"));
-
-// HTML Routes
-app.get("/notes", (req, res) => {
-  res.sendFile(path.join(__dirname, "public", "notes.html"));
-});
-
-app.get("*", (req, res) => {
-  res.sendFile(path.join(__dirname, "public", "index.html"));
-});
 
 // API Routes
 app.get("/api/notes", (req, res) => {
@@ -31,7 +21,7 @@ app.get("/api/notes", (req, res) => {
     }
 
     try {
-      const notes = JSON.parse(data);
+      const notes = JSON.parse(data); // an array of objects
       res.json(notes);
     } catch (parseError) {
       console.error(parseError);
@@ -75,6 +65,54 @@ app.post("/api/notes", (req, res) => {
       return res.status(500).json({ error: "Failed to parse the database" });
     }
   });
+});
+
+///////////////////////////
+// read all notes in db.json, use filter, then rewrite to db.json
+app.delete("/api/notes/:id", (req, res) => {
+  const idToDelete = req.params.id;
+
+  console.log(idToDelete);
+  fs.readFile(path.join(__dirname, "db", "db.json"), "utf8", (err, data) => {
+    if (err) {
+      console.error(err);
+      return res.status(500).json({ error: "Failed to read the database" });
+    }
+
+    try {
+      let notes = JSON.parse(data);
+      console.log(notes);
+      notes = notes.filter((child) => child.id !== idToDelete);
+      console.log(notes);
+
+      fs.writeFile(
+        path.join(__dirname, "db", "db.json"),
+        JSON.stringify(notes),
+        (writeErr) => {
+          if (writeErr) {
+            console.error(writeErr);
+            return res
+              .status(500)
+              .json({ error: "Failed to write to the database" });
+          }
+        }
+      );
+    } catch (parseError) {
+      console.error(parseError);
+      return res.status(500).json({ error: "Failed to parse the database" });
+    }
+  });
+});
+
+/////////////////////////////
+
+// HTML Routes
+app.get("/notes", (req, res) => {
+  res.sendFile(path.join(__dirname, "public", "notes.html"));
+});
+
+app.get("*", (req, res) => {
+  res.sendFile(path.join(__dirname, "public", "index.html"));
 });
 
 app.listen(PORT, () => {
