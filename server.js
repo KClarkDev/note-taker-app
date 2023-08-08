@@ -13,6 +13,8 @@ app.use(express.urlencoded({ extended: true }));
 app.use(express.static("public"));
 
 // API Routes
+
+// Retrieve existing notes
 app.get("/api/notes", (req, res) => {
   fs.readFile(path.join(__dirname, "db", "db.json"), "utf8", (err, data) => {
     if (err) {
@@ -30,6 +32,7 @@ app.get("/api/notes", (req, res) => {
   });
 });
 
+// Write and save a new note
 app.post("/api/notes", (req, res) => {
   const newNote = req.body;
 
@@ -67,12 +70,10 @@ app.post("/api/notes", (req, res) => {
   });
 });
 
-///////////////////////////
-// read all notes in db.json, use filter, then rewrite to db.json
+// Delete Notes
 app.delete("/api/notes/:id", (req, res) => {
   const idToDelete = req.params.id;
 
-  console.log(idToDelete);
   fs.readFile(path.join(__dirname, "db", "db.json"), "utf8", (err, data) => {
     if (err) {
       console.error(err);
@@ -81,13 +82,11 @@ app.delete("/api/notes/:id", (req, res) => {
 
     try {
       let notes = JSON.parse(data);
-      console.log(notes);
       notes = notes.filter((child) => child.id !== idToDelete);
-      console.log(notes);
 
       fs.writeFile(
-        path.join(__dirname, "db", "db.json"),
-        JSON.stringify(notes),
+        path.join(__dirname, "db", "db.json"), //path
+        JSON.stringify(notes), //data
         (writeErr) => {
           if (writeErr) {
             console.error(writeErr);
@@ -97,6 +96,7 @@ app.delete("/api/notes/:id", (req, res) => {
           }
         }
       );
+      return res.status(200).json({ success: true });
     } catch (parseError) {
       console.error(parseError);
       return res.status(500).json({ error: "Failed to parse the database" });
@@ -114,6 +114,8 @@ app.get("/notes", (req, res) => {
 app.get("*", (req, res) => {
   res.sendFile(path.join(__dirname, "public", "index.html"));
 });
+
+//////////////////////////////
 
 app.listen(PORT, () => {
   console.log(`Server listening on http://localhost:${PORT}`);
